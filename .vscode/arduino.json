@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:uno",
+    "port": "/dev/cu.usbserial-1411410",
+    "programmer": "Arduino as ISP",
+    "sketch": "sds011-lcd.ino"
+}
