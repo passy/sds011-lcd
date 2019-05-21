@@ -3,8 +3,8 @@
 #include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 
-int rxPin = 2;
-int txPin = 3;
+int rxPin = 5;
+int txPin = 4;
 SdsDustSensor sds(rxPin, txPin);
 LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7);
 
@@ -38,13 +38,10 @@ void loop() {
     lcd.setCursor(7, 1);
     lcd.print(pm.pm10);
   } else {
-    lcd.clear();
-    lcd.home();
-    lcd.print("Read Error");
     // notice that loop delay is set to 0.5s and some reads are not available
     Serial.print("Could not read values from sensor, reason: ");
     Serial.println(pm.statusToString());
   }
 
-  delay(60000 + 1000);
+  delay(500);
 }
