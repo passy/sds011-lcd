@@ -3,8 +3,8 @@
 #include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 
-int rxPin = 5;
-int txPin = 4;
+int rxPin = D1;
+int txPin = D2;
 SdsDustSensor sds(rxPin, txPin);
 LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7);
 

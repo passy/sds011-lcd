@@ -1,5 +1,5 @@
 {
-    "board": "esp8266:esp8266:nodemcu",
+    "board": "esp8266:esp8266:d1_mini",
     "port": "/dev/cu.usbserial-1411420",
     "programmer": "AVR ISP",
     "sketch": "sds011-lcd.ino",
