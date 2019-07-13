@@ -1,6 +1,6 @@
 {
     "board": "esp8266:esp8266:d1_mini",
-    "port": "/dev/cu.usbserial-1411420",
+    "port": "/dev/cu.usbserial-1412410",
     "programmer": "AVR ISP",
     "sketch": "sds011-lcd.ino",
     "configuration": "xtal=80,vt=flash,exception=disabled,eesz=4M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=115200"
