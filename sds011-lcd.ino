@@ -7,6 +7,8 @@
 #include <ESP8266WiFi.h>
 #include "secrets.h"
 
+#define LED 2
+
 int rxPin = D6;
 int txPin = D7;
 SdsDustSensor sds(rxPin, txPin);
@@ -25,6 +27,11 @@ Adafruit_MQTT_Publish feedPm25 =
 void setup()
 {
   Serial.begin(9600);
+
+  pinMode(LED, OUTPUT);
+  // Turn LED off until MQTT is connected.
+  digitalWrite(LED, HIGH);
+
   sds.begin();
   lcd.begin(20, 4);
   lcd.setBacklightPin(3, POSITIVE);
@@ -45,11 +52,14 @@ void setup()
     delay(500);
     Serial.print(".");
   }
-  Serial.println();
+  Serial.println(" connected.");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 }
 
 void loop()
 {
+  connectMQTT();
   PmResult pm = sds.readPm();
 
   if (pm.isOk())
@@ -68,13 +78,13 @@ void loop()
     lcd.setCursor(7, 1);
     lcd.print(pm.pm10);
 
-    if (!feedPm10.publish(pm.pm10))
+    if (!feedPm10.publish(pm.pm10, 4))
     {
       Serial.println(F("Failed to publish PM10 to MQTT."));
     }
-    if (!feedPm25.publish(pm.pm25))
+    if (!feedPm25.publish(pm.pm25, 4))
     {
-      Serial.println(F("Failed to publish PM10 to MQTT."));
+      Serial.println(F("Failed to publish PM25 to MQTT."));
     }
   }
   else
@@ -84,5 +94,41 @@ void loop()
     Serial.println(pm.statusToString());
   }
 
+  // ping the server to keep the mqtt connection alive
+  if (!mqtt.ping()) {
+    mqtt.disconnect();
+  }
+
   delay(500);
+}
+
+// Function to connect and reconnect as necessary to the MQTT server.
+// Should be called in the loop function and it will take care if connecting.
+void connectMQTT() {
+  int8_t ret;
+
+  // Stop if already connected.
+  if (mqtt.connected()) {
+    return;
+  }
+
+  Serial.print("Connecting to MQTT... ");
+
+  uint8_t retries = 3;
+  // connect will return 0 for connected
+  while ((ret = mqtt.connect()) != 0) {
+    digitalWrite(LED, HIGH);
+    Serial.println(mqtt.connectErrorString(ret));
+    Serial.println("Retrying MQTT connection in 5 seconds...");
+    mqtt.disconnect();
+    delay(5000); // wait 5 seconds
+    retries--;
+    if (retries == 0) {
+      // basically die and wait for WDT to reset me
+      while (1)
+        ;
+    }
+  }
+  digitalWrite(LED, LOW);
+  Serial.println("MQTT Connected!");
 }
