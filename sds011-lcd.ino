@@ -9,8 +9,10 @@
 
 #define LED 2
 
-int rxPin = D6;
-int txPin = D7;
+const int rxPin = D6;
+const int txPin = D7;
+const int no2Pin = A0;
+const float no2Resistor = 22000;
 SdsDustSensor sds(rxPin, txPin);
 LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7);
 
@@ -23,12 +25,15 @@ Adafruit_MQTT_Publish feedPm10 =
     Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/pm10");
 Adafruit_MQTT_Publish feedPm25 =
     Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/pm25");
+Adafruit_MQTT_Publish feedNo2 =
+    Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/no2");
 
 void setup()
 {
   Serial.begin(9600);
 
   pinMode(LED, OUTPUT);
+  pinMode(no2Pin, INPUT);
   // Turn LED off until MQTT is connected.
   digitalWrite(LED, HIGH);
 
@@ -57,10 +62,27 @@ void setup()
   Serial.println(WiFi.localIP());
 }
 
+float readNo2() {
+  int no2Raw = analogRead(no2Pin);
+  Serial.print("Raw no2 value:");
+  Serial.println(no2Raw);
+  float no2Resistance = no2Resistor * ((1023.0 / no2Raw) - 1.0) / 100;
+  Serial.print("No2 resistance:");
+  Serial.println(no2Resistance);
+  // https://uk-air.defra.gov.uk/assets/documents/reports/cat06/0502160851_Conversion_Factors_Between_ppb_and.pdf
+  return no2Resistance / 1.19125;
+}
+
 void loop()
 {
   connectMQTT();
   PmResult pm = sds.readPm();
+
+  const float no2 = readNo2();
+  lcd.setCursor(0, 2);
+  lcd.print("NO2: ");
+  lcd.setCursor(7, 2);
+  lcd.print(readNo2());
 
   if (pm.isOk())
   {
@@ -85,6 +107,10 @@ void loop()
     if (!feedPm25.publish(pm.pm25, 4))
     {
       Serial.println(F("Failed to publish PM25 to MQTT."));
+    }
+    if (!feedNo2.publish(no2, 4))
+    {
+      Serial.println(F("Failed to publish NO2 to MQTT."));
     }
   }
   else
