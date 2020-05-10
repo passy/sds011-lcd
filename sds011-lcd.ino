@@ -62,8 +62,9 @@ void setup()
   Serial.println(WiFi.localIP());
 }
 
-float readNo2() {
-  int no2Raw = analogRead(no2Pin);
+float readNo2()
+{
+  int no2Raw = analogRead(0);
   Serial.print("Raw no2 value:");
   Serial.println(no2Raw);
   float no2Resistance = no2Resistor * ((1023.0 / no2Raw) - 1.0) / 100;
@@ -77,12 +78,6 @@ void loop()
 {
   connectMQTT();
   PmResult pm = sds.readPm();
-
-  const float no2 = readNo2();
-  lcd.setCursor(0, 2);
-  lcd.print("NO2: ");
-  lcd.setCursor(7, 2);
-  lcd.print(readNo2());
 
   if (pm.isOk())
   {
@@ -100,6 +95,20 @@ void loop()
     lcd.setCursor(7, 1);
     lcd.print(pm.pm10);
 
+    lcd.setCursor(0, 2);
+    if (pm.pm25 + pm.pm10 > 40)
+    {
+      lcd.print("BAD! Turn the purifier on!");
+    }
+    else if (pm.pm25 + pm.pm10 > 20)
+    {
+      lcd.print("Not great, not terrible.");
+    }
+    else
+    {
+      lcd.print("                              ");
+    }
+
     if (!feedPm10.publish(pm.pm10, 4))
     {
       Serial.println(F("Failed to publish PM10 to MQTT."));
@@ -107,10 +116,6 @@ void loop()
     if (!feedPm25.publish(pm.pm25, 4))
     {
       Serial.println(F("Failed to publish PM25 to MQTT."));
-    }
-    if (!feedNo2.publish(no2, 4))
-    {
-      Serial.println(F("Failed to publish NO2 to MQTT."));
     }
   }
   else
@@ -121,7 +126,8 @@ void loop()
   }
 
   // ping the server to keep the mqtt connection alive
-  if (!mqtt.ping()) {
+  if (!mqtt.ping())
+  {
     mqtt.disconnect();
   }
 
@@ -130,11 +136,13 @@ void loop()
 
 // Function to connect and reconnect as necessary to the MQTT server.
 // Should be called in the loop function and it will take care if connecting.
-void connectMQTT() {
+void connectMQTT()
+{
   int8_t ret;
 
   // Stop if already connected.
-  if (mqtt.connected()) {
+  if (mqtt.connected())
+  {
     return;
   }
 
@@ -142,14 +150,16 @@ void connectMQTT() {
 
   uint8_t retries = 3;
   // connect will return 0 for connected
-  while ((ret = mqtt.connect()) != 0) {
+  while ((ret = mqtt.connect()) != 0)
+  {
     digitalWrite(LED, HIGH);
     Serial.println(mqtt.connectErrorString(ret));
     Serial.println("Retrying MQTT connection in 5 seconds...");
     mqtt.disconnect();
     delay(5000); // wait 5 seconds
     retries--;
-    if (retries == 0) {
+    if (retries == 0)
+    {
       // basically die and wait for WDT to reset me
       while (1)
         ;
